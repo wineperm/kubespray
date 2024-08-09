@@ -304,11 +304,12 @@ default_kubelet_config_dir: "{{ kube_config_dir }}/dynamic_kubelet_dir"
 ## That can be useful for example to setup a keepalived virtual IP
 supplementary_addresses_in_ssl_keys: >-
   {% set master_ip = hostvars['k8s-master-0']['ansible_default_ipv4']['address'] %}
-  {% if master_ip is not defined %}
-  {% fail "IP address for k8s-master-0 is not defined" %}
-  {% endif %}
+  {% if master_ip is defined %}
   [{{ master_ip }}]
-
+  {% else %}
+  []
+  {% endif %}
+  
 ## Running on top of openstack vms with cinder enabled may lead to unschedulable pods due to NoVolumeZoneConflict restriction in kube-scheduler.
 ## See https://github.com/kubernetes-sigs/kubespray/issues/2141
 ## Set this variable to true to get rid of this issue
