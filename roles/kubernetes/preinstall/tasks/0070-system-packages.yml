@@ -34,28 +34,25 @@
 
 - name: Update package management cache (APT)
   apt:
-    update_cache: yes
+    update_cache: true
     cache_valid_time: 3600
   when: ansible_os_family == "Debian"
   tags:
     - bootstrap-os
 
-- name: Remove legacy docker repo file
-  file:
-    path: "{{ yum_repo_dir }}/docker.repo"
-    state: absent
-  when:
-    - ansible_os_family == "RedHat"
-    - not is_fedora_coreos
+- name: Stop unattended-upgrades service
+  systemd:
+    name: unattended-upgrades
+    state: stopped
+  when: ansible_os_family == "Debian"
+  tags:
+    - bootstrap-os
 
-- name: Install epel-release on RHEL derivatives
-  package:
-    name: epel-release
-    state: present
-  when:
-    - ansible_os_family == "RedHat"
-    - not is_fedora_coreos
-    - epel_enabled | bool
+- name: Remove dpkg lock file
+  file:
+    path: /var/lib/dpkg/lock-frontend
+    state: absent
+  when: ansible_os_family == "Debian"
   tags:
     - bootstrap-os
 
@@ -85,3 +82,31 @@
   when: not (ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk"] or is_fedora_coreos)
   tags:
     - bootstrap-os
+
+- name: Start unattended-upgrades service
+  systemd:
+    name: unattended-upgrades
+    state: started
+  when: ansible_os_family == "Debian"
+  tags:
+    - bootstrap-os
+
+- name: Remove legacy docker repo file
+  file:
+    path: "{{ yum_repo_dir }}/docker.repo"
+    state: absent
+  when:
+    - ansible_os_family == "RedHat"
+    - not is_fedora_coreos
+
+- name: Install epel-release on RHEL derivatives
+  package:
+    name: epel-release
+    state: present
+  when:
+    - ansible_os_family == "RedHat"
+    - not is_fedora_coreos
+    - epel_enabled | bool
+  tags:
+    - bootstrap-os
+
